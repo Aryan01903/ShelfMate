@@ -21,7 +21,15 @@ const userSchema=new mongoose.Schema({
     password : {
         type : String,
         required : true
-    }
+    },
+    savedBooks : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "Book"
+    }],
+    ratedBooks : [{
+        bookId : mongoose.Schema.Types.ObjectId,
+        rating : Number
+    }]
 }, {
     timestamps : true,  // Automatically adds `createdAt` and `updatedAt`
     versionKey : false  // Disables the `__v` field in the document

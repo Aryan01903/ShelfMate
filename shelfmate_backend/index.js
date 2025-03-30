@@ -2,6 +2,7 @@ const express=require("express")
 const server=require("./configs/server_config")
 const mongoose=require("mongoose")
 const db_config=require("./configs/db_config")
+const user_model=require("./models/user_model")
 
 
 const app=express()
