@@ -15,6 +15,7 @@ exports.signup=async(req,res)=>{
     const userObj={
         name : request_body.name,
         email : request_body.email,
+        userId : request_body.userId,
         password : bcryptjs.hashSync(request_body.password,8)
     }
 
@@ -41,41 +42,58 @@ exports.signup=async(req,res)=>{
 }
 
 exports.signin=async(req,res)=>{
-    /**
-     * Check if the userId is present in the system
-     */
+    try{
+        
+        console.log("DEBUG: Full request body =>", req.body);
 
-    const user = await user_model.findOne({userId : req.body.userId})
+        const { identifier, password } = req.body;
+        console.log("DEBUG: identifier =", identifier);
+        console.log("DEBUG: password =", password);
 
-    if(user==null){
+        if (typeof identifier !== "string" || typeof password !== "string" || !identifier.trim() || !password.trim()){
         return res.status(400).send({
-            message : " User Email passed is not Valid(or Exist)"
-        })
+            message: "Identifier and password must be provided",
+        });
     }
 
-    /**
-     * Password is Correct
-     */
 
-    const isPasswordValid=bcrypt.compareSync(req.body.password,user.password)
-    if(!isPasswordValid){
-        return res.status(401).send({
-            message : 'Worng password passed'
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+        const user = await user_model.findOne(isEmail?{email:identifier} :{userId:identifier})
+
+        if(user==null){
+            return res.status(400).send({
+                message : " User id or Email id not exist"
+            })
+        }
+
+        /**
+        * Password is Correct
+        */
+
+        const isPasswordValid=bcryptjs.compareSync(password,user.password)
+        if(!isPasswordValid){
+            return res.status(401).send({
+                message : 'Worng password passed'
+            })
+        }
+
+        // using jwt, we will create the access token with a given TTKLK and return 
+
+        const token = jwt.sign({id : user.userId},secret.secret,{
+            expiresIn : 120
+        })
+
+        res.status(200).send({
+            name : user.name,
+            userId : user.userId,
+            email : user.email,
+            accessToken : token
+        })
+    }catch(err){
+        console.log("signin error:",err);
+        res.status(500).send({
+            message:"Internal server error"
         })
     }
-
-    // using jwt, we will create the access token with a given TTKLK and return 
-
-    const token = jwt.sign({id : user.userId},secret.secret,{
-        expiresIn : 120
-    })
-
-    res.status(200).send({
-        name : user.name,
-        userId : user.userId,
-        email : user.email,
-        accessToken : token
-    })
-
     
 }

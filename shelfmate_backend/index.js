@@ -2,10 +2,10 @@ const express=require("express")
 const server=require("./configs/server_config")
 const mongoose=require("mongoose")
 const db_config=require("./configs/db_config")
-const user_model=require("./models/user_model")
-
-
 const app=express()
+
+
+app.use(express.json());
 
 
 /**
@@ -19,7 +19,18 @@ mongoose.connect(db_config.DB_URL)
     console.log("Error occurred while connecting to the database:", err.message);
   });
 
+/**
+ * Stitch to the Server
+ */
 
+const authRoutes=require("./routes/auth_route")
+authRoutes(app);
+
+const bookRoutes=require("./routes/book_route");
+bookRoutes(app);
+
+
+  
 
 /**
  * Starting the Server

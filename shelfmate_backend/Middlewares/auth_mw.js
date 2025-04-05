@@ -45,9 +45,17 @@ const verifySignUpBody=async(req,res,next)=>{
 }
 
 const verifySignInBody=async(req,res,next)=>{
-    if(!req.body.userId){
+    const {identifier,password}=req.body;
+
+    if(!identifier){
         return res.status(400).send({
-            message : "password is not provided"
+            message : "Identifier(userId or email) is not provided"
+        })
+    }
+
+    if(!password){
+        return res.status(400).send({
+            message : "Password is not Provided"
         })
     }
     next()
@@ -80,5 +88,11 @@ const verifyToken=(req,res,next)=>{
         req.user = user
         next()
     } )
+}
+
+module.exports={
+    verifySignUpBody,
+    verifySignInBody,
+    verifyToken
 }
 
