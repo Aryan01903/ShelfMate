@@ -1,7 +1,6 @@
 const express=require("express")
 const server=require("./configs/server_config")
 const mongoose=require("mongoose")
-const db_config=require("./configs/db_config")
 const app=express()
 
 
@@ -11,12 +10,12 @@ app.use(express.json());
 /**
  * Database Connection :- 
  */
-mongoose.connect(db_config.DB_URL)
+mongoose.connect("mongodb+srv://projectdeveloper25:UF7tYSAEJupPIFJb@shelfmatedb.yewqegc.mongodb.net/?retryWrites=true&w=majority&appName=shelfmateDB")
 .then(() => {
-    console.log("Successfully connected to MongoDB");
+    console.log("Successfully connected to Database");
   })
   .catch((err) => {
-    console.log("Error occurred while connecting to the database:", err.message);
+    console.log("Error occurred while connecting to the Database:", err.message);
   });
 
 /**

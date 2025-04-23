@@ -78,7 +78,7 @@ const verifyToken=(req,res,next)=>{
                 message : "UnAuthorized !"
             })
         }
-        const user = await user_model.findOne({userId : decoded.id})
+        const user = await user_model.findOne(decoded.id)
         if(!user){
             return res.status(400).send({
                 message : "UnAuthorized, this user for this token doesn't exist"
