@@ -1,98 +1,89 @@
-const user_model=require("../models/user_model")
-const jwt=require("jsonwebtoken")
-const auth_config=require("../configs/auth_config")
+const user_model = require("../models/user_model");
+const jwt = require("jsonwebtoken");
+const auth_config = require("../configs/auth_config");
 
 /**
- * Create a mw that will check if the request body is proper and correct 
+ *  Middleware to validate the signup body (before OTP is sent)
  */
+const verifySendOtpBody = async (req, res, next) => {
+    const { email } = req.body;
 
-const verifySignUpBody=async(req,res,next)=>{
-    try{
-        // Check for the name 
-        if(!req.body.name){
-            return res.status(400).send({
-                message : "Failed! Name not provided in request body"
-            })
-        }
-        // check for email
-        if(!req.body.email){
-            return res.status(400).send({
-                mesaage : "Failed! Email not provided in the request body"
-            })
-        }
-        // check for userId
-        if(!req.body.userId){
-            return res.status(400).send({
-                message : "Failed! userId not provided in request body"
-            })
-        }
-        // check if the user with the same userId is already present
-        const user=await user_model.findOne({userId:req.body.userId})
-        if(user){
-            return res.status(400).send({
-                message : "Failed! user with same userId is already present"
-            })
-        }
-
-        next()
+    if (!email) {
+        return res.status(400).send({ message: "Email is required to send OTP" });
     }
-    catch(err){
-        console.log("Error while validating the request object",err)
-        res.status(500).send({
-            message : "Error while validating the request body"
-        })
+
+    const existingUser = await user_model.findOne({ email });
+    if (existingUser) {
+        return res.status(400).send({ message: "User already exists with this email" });
     }
-}
 
-const verifySignInBody=async(req,res,next)=>{
-    const {identifier,password}=req.body;
+    next();
+};
 
-    if(!identifier){
+/**
+ *  Middleware to validate OTP + signup request
+ */
+const verifyOtpSignupBody = async (req, res, next) => {
+    const { name, userId, email, password, otp } = req.body;
+
+    if (!name || !userId || !email || !password || !otp) {
+        return res.status(400).send({ message: "All fields are required for OTP signup" });
+    }
+
+    const existingUser = await user_model.findOne({ userId });
+    if (existingUser) {
+        return res.status(400).send({ message: "User with this userId already exists" });
+    }
+
+    next();
+};
+
+/**
+ *  Middleware to validate signin body
+ */
+const verifySignInBody = (req, res, next) => {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
         return res.status(400).send({
-            message : "Identifier(userId or email) is not provided"
-        })
+            message: "Both identifier (userId or email) and password are required",
+        });
     }
 
-    if(!password){
-        return res.status(400).send({
-            message : "Password is not Provided"
-        })
-    }
-    next()
-}
+    next();
+};
 
-const verifyToken=(req,res,next)=>{
-    //Check if the token is present in the header
-    const token = req.headers['x-access-token']
+/**
+ *  Middleware to verify JWT token
+ */
+const verifyToken = async (req, res, next) => {
+    const token = req.headers["x-access-token"];
 
-    if(!token){
-        return res.status(403).send({
-            message : "No token found : UnAuthorized"
-        })
+    if (!token) {
+        return res.status(403).send({ message: "No token provided" });
     }
 
-    //If it's the valid token
-    jwt.verify(token,auth_config.secret ,async (err, decoded)=>{
-        if(err){
-            return res.status(401).send({
-                message : "UnAuthorized !"
-            })
+    jwt.verify(token, auth_config.secret, async (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: "Unauthorized! Invalid token." });
         }
-        const user = await user_model.findOne(decoded.id)
-        if(!user){
+
+        const user = await user_model.findOne({ userId: decoded.id });
+
+        if (!user) {
             return res.status(400).send({
-                message : "UnAuthorized, this user for this token doesn't exist"
-            })
+                message: "User not found for the given token",
+            });
         }
-        //Set the user info in the req body
-        req.user = user
-        next()
-    } )
-}
 
-module.exports={
-    verifySignUpBody,
+        req.user = user; // Attach user info to request
+        next();
+    });
+};
+
+module.exports = {
+    verifySendOtpBody,
+    verifyOtpSignupBody,
     verifySignInBody,
-    verifyToken
-}
-
+    verifyToken,
+};
