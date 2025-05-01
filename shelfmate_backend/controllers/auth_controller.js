@@ -4,8 +4,6 @@ const jwt=require("jsonwebtoken")
 const secret=require("../configs/auth_config")
 const otp_model=require("../models/otp_model")
 const sendEmail=require("../utils/sendEmail")
-const crypto=require("crypto")
-
 const generateOtp=()=>{
     return Math.floor(100000+Math.random()*900000).toString();
 }
@@ -29,10 +27,10 @@ exports.sendOtp=async (req,res)=>{
         await otp_model.deleteMany({email}); // clean old OTPs
         await otp_model.create({email,otp}); // save new OTP
 
-        await sendMail(
+        await sendEmail(
             email,
             "ShelfMate Signup OTP",
-            `Your OTP is ${otp}. It will expire in 2 minutes.`
+            `Your OTP is ${otp}. It will expire in 5 minutes.`
         );
         return res.status(200).send({
             message : "OTP sent successfully to email"
@@ -72,7 +70,8 @@ exports.verifyOtpAndSignup = async (req, res) => {
                 name: newUser.name,
                 email: newUser.email,
                 userId: newUser.userId,
-                createdAt: newUser.createdAt
+                createdAt: newUser.createdAt,
+                updatedAt : newUser.updatedAt
             }
         });
 
@@ -83,59 +82,67 @@ exports.verifyOtpAndSignup = async (req, res) => {
 };
 
 
-exports.signin=async(req,res)=>{
-    try{
-        
-        console.log("DEBUG: Full request body =>", req.body);
-
+exports.signin = async (req, res) => {
+    try {
         const { identifier, password } = req.body;
+
+        console.log("DEBUG: Full request body =>", req.body);
         console.log("DEBUG: identifier =", identifier);
         console.log("DEBUG: password =", password);
 
-        if (typeof identifier !== "string" || typeof password !== "string" || !identifier.trim() || !password.trim()){
-        return res.status(400).send({
-            message: "Identifier and password must be provided",
+        // Validate request body
+        if (!identifier || !password) {
+            return res.status(400).send({
+                message: "Both identifier (userId or email) and password must be provided",
+            });
+        }
+
+        // Check if the identifier is an email or userId
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+
+        // Query user by email or userId, making sure to select password field
+        const user = await user_model.findOne(isEmail ? { email: identifier } : { userId: identifier }).select("+password");
+
+        // Check if user is found
+        if (!user) {
+            return res.status(400).send({
+                message: "User id or Email id does not exist",
+            });
+        }
+
+        // Check if password is valid
+        if (!user.password) {
+            return res.status(500).send({
+                message: "Password is not available for this user.",
+            });
+        }
+
+        // Compare the provided password with the hashed password stored in the database
+        const isPasswordValid = bcryptjs.compareSync(password, user.password);
+
+        // If password doesn't match
+        if (!isPasswordValid) {
+            return res.status(401).send({
+                message: "Incorrect password",
+            });
+        }
+
+        // Generate JWT token for the user
+        const token = jwt.sign({ id: user.userId }, secret.secret, {
+            expiresIn: "1h" // JWT expiry time (One hour)
+        });
+
+        // Send response with token and user details
+        return res.status(200).send({
+            name: user.name,
+            userId: user.userId,
+            email: user.email,
+            accessToken: token,
+        });
+    } catch (err) {
+        console.log("signin error:", err);
+        return res.status(500).send({
+            message: "Internal server error",
         });
     }
-
-
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
-        const user = await user_model.findOne(isEmail?{email:identifier} :{userId:identifier})
-
-        if(user==null){
-            return res.status(400).send({
-                message : " User id or Email id not exist"
-            })
-        }
-
-        /**
-        * Password is Correct
-        */
-
-        const isPasswordValid=bcryptjs.compareSync(password,user.password)
-        if(!isPasswordValid){
-            return res.status(401).send({
-                message : 'Worng password passed'
-            })
-        }
-
-        // using jwt, we will create the access token with a given TTKLK and return 
-
-        const token = jwt.sign({id : user.userId},secret.secret,{
-            expiresIn : 120
-        })
-
-        res.status(200).send({
-            name : user.name,
-            userId : user.userId,
-            email : user.email,
-            accessToken : token
-        })
-    }catch(err){
-        console.log("signin error:",err);
-        res.status(500).send({
-            message:"Internal server error"
-        })
-    }
-    
-}
+};

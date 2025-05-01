@@ -1,38 +1,53 @@
-const mongoose=require("mongoose")
+const mongoose = require("mongoose");
 
-
-
-const userSchema=new mongoose.Schema({
-    name : {
-        type : String,
-        require : true
+const userSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
     },
-    userId : {
-        type : String,
-        required : true,
-        unique : true
+    userId: {
+        type: String,
+        required: true,
+        unique: true
     },
-    email : {
-        type : String,
-        required : true,
-        unique : true,
-        lowercase : true
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true,
+        match: [/.+@.+\..+/, "Please enter a valid email address"]
     },
     password : {
         type : String,
-        required : true
+        required : true,
+        select : false, // ensure no leakage of password
     },
-    savedBooks : [{
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "Book"
+    otp: {
+        code: String,
+        expiresAt: Date
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    savedBooks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Book"
     }],
-    ratedBooks : [{
-        bookId : mongoose.Schema.Types.ObjectId,
-        rating : Number
+    ratedBooks: [{
+        bookId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Book"
+        },
+        rating: {
+            type: Number,
+            min: 0,
+            max: 5
+        }
     }]
 }, {
-    timestamps : true,  // Automatically adds `createdAt` and `updatedAt`
-    versionKey : false  // Disables the `__v` field in the document
-})
+    timestamps: true,
+    versionKey: false
+});
 
-module.exports = mongoose.model("User",userSchema)
+module.exports = mongoose.model("User", userSchema);

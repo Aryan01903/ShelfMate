@@ -28,9 +28,6 @@ authRoutes(app);
 const bookRoutes=require("./routes/book_route");
 bookRoutes(app);
 
-
-  
-
 /**
  * Starting the Server
 */

@@ -35,6 +35,7 @@ const verifyOtpSignupBody = async (req, res, next) => {
         return res.status(400).send({ message: "User with this userId already exists" });
     }
 
+    // Continue to controller
     next();
 };
 
