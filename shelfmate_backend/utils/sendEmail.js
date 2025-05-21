@@ -1,22 +1,9 @@
-require('dotenv').config({ path: 'G:/Projects/Resume Projects/Book_Recommendation/ShelfMate/shelfmate_backend/utils/.env' });
-
-console.log("MAIL_USER:", process.env.MAIL_USER);  // Should print your email address
-console.log("MAIL_PASS:", process.env.MAIL_PASS);  // Should print your password
-
-const nodemailer=require("nodemailer")
-const fs = require('fs');
-const path = './.env';  // Adjust if .env is in a different folder
-
-if (fs.existsSync(path)) {
-    console.log('.env file found!');
-} else {
-    console.log('.env file NOT found at', path);
-}
-
+require("dotenv").config();
 
 console.log("MAIL_USER:", process.env.MAIL_USER);
-console.log("MAIL_PASS:", process.env.MAIL_PASS ? "✅ Present" : "❌ Missing");
+console.log("MAIL_PASS:", process.env.MAIL_PASS);
 
+const nodemailer=require("nodemailer")
 const transporter = nodemailer.createTransport({
     service : "Gmail",
     auth : {
