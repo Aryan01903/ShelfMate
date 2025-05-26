@@ -1,6 +1,6 @@
 const user_model = require("../models/user_model");
 const jwt = require("jsonwebtoken");
-const auth_config = require("../configs/auth_config");
+require('dotenv').config()
 
 /**
  *  Middleware to validate the signup body (before OTP is sent)
@@ -64,7 +64,7 @@ const verifyToken = async (req, res, next) => {
         return res.status(403).send({ message: "No token provided" });
     }
 
-    jwt.verify(token, auth_config.secret, async (err, decoded) => {
+    jwt.verify(token, process.env.secret, async (err, decoded) => {
         if (err) {
             return res.status(401).send({ message: "Unauthorized! Invalid token." });
         }

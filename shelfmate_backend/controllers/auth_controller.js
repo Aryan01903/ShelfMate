@@ -1,9 +1,11 @@
 const bcryptjs=require("bcryptjs")
 const user_model=require("../models/user_model")
 const jwt=require("jsonwebtoken")
-const secret=require("../configs/auth_config")
 const otp_model=require("../models/otp_model")
 const sendEmail=require("../utils/sendEmail")
+
+require('dotenv').config();
+
 const generateOtp=()=>{
     return Math.floor(100000+Math.random()*900000).toString();
 }
@@ -128,7 +130,7 @@ exports.signin = async (req, res) => {
         }
 
         // Generate JWT token for the user
-        const token = jwt.sign({ id: user.userId }, secret.secret, {
+        const token = jwt.sign({ id: user.userId }, process.env.secret, {
             expiresIn: "1h" // JWT expiry time (One hour)
         });
 

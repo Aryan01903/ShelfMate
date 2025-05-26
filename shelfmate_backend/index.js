@@ -2,15 +2,14 @@ const express=require("express")
 const server=require("./configs/server_config")
 const mongoose=require("mongoose")
 const app=express()
-
+require('dotenv').config()
 
 app.use(express.json());
-
 
 /**
  * Database Connection :- 
  */
-mongoose.connect("mongodb+srv://projectdeveloper25:UF7tYSAEJupPIFJb@shelfmatedb.yewqegc.mongodb.net/?retryWrites=true&w=majority&appName=shelfmateDB")
+mongoose.connect(process.env.DB_URL)
 .then(() => {
     console.log("Successfully connected to Database");
   })
