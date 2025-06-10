@@ -87,11 +87,6 @@ exports.verifyOtpAndSignup = async (req, res) => {
 exports.signin = async (req, res) => {
     try {
         const { identifier, password } = req.body;
-
-        console.log("DEBUG: Full request body =>", req.body);
-        console.log("DEBUG: identifier =", identifier);
-        console.log("DEBUG: password =", password);
-
         // Validate request body
         if (!identifier || !password) {
             return res.status(400).send({

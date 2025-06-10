@@ -1,48 +1,61 @@
-const mongoose=require("mongoose");
+const mongoose = require("mongoose");
 
-
-const bookSchema=new mongoose.Schema({
-    openLibraryId: { 
-        type: String, 
-        required: true, 
-        unique: true 
-    }, // Open Library ID
-    title: { 
-        type: String, 
-        required: true 
+const bookSchema = new mongoose.Schema(
+  {
+    openLibraryId: {
+        type: String,
+        unique: true,
+        sparse: true, //important to avoid error if value is missing
     },
-    authors: { 
-        type: [String], 
-        default: ["Unknown"] 
+    author_key: {
+        type: String,
+        sparse: true, //important to avoid error if value is missing
     },
-    description: { 
-        type: String, 
-        default: "No description available" 
+    work_key: {
+      type: String,
+      required: true,
+      unique: true,
     },
-    coverImage: { 
-        type: String, 
-        default: "https://via.placeholder.com/150" 
+    title: {
+      type: String,
+      required: true,
     },
-    subjects: { 
-        type: [String], 
-        default: ["Uncategorized"] 
+    authors: {
+      type: [String],
+      default: ["Unknown"],
     },
-    link: { 
-        type: String 
+    description: {
+      type: String,
+      default: "No description available",
+    },
+    coverImage: {
+      type: String,
+      default: "https://via.placeholder.com/150",
+    },
+    subjects: {
+      type: [String],
+      default: [],
+    },
+    link: {
+      type: String,
     },
     addedBy: {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "User" 
-    }, // User who added the book
-    ratings : [{
-        userId : mongoose.Schema.Types.ObjectId,
-        rating : Number,
-        review : String
-    }],
-    averageRating : {
-        type : Number,
-        default : 0
-    } 
-}, { timestamps: true })
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    ratings: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        rating: { type: Number, required: true, min: 1, max: 5 },
+        review: { type: String },
+      },
+    ],
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Book",bookSchema)
+module.exports = mongoose.model("Book", bookSchema);
