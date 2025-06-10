@@ -11,10 +11,12 @@ exports.searchBooks = async (req, res) => {
       return res.status(400).json({ message: "Search query is required." });
     }
 
+    // Fetch from Open Library
     const response = await axios.get(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`
     );
 
+    // Filter and normalize work keys
     const books = response.data.docs
       .filter(book => book.key && book.key.match(/^\/works\/OL[0-9]+W$/))
       .map(book => ({
@@ -22,7 +24,24 @@ exports.searchBooks = async (req, res) => {
         work_key: book.key.replace(/^\/works\//, '').toUpperCase(),
       }));
 
-    res.json(books);
+    const workKeys = books.map(book => book.work_key);
+
+    // Fetch average ratings for those books from your DB
+    const dbBooks = await Book.find({ work_key: { $in: workKeys } }, 'work_key averageRating');
+
+    // Create a map of work_key => averageRating
+    const ratingsMap = {};
+    dbBooks.forEach(dbBook => {
+      ratingsMap[dbBook.work_key] = dbBook.averageRating;
+    });
+
+    // Attach rating to books
+    const booksWithRatings = books.map(book => ({
+      ...book,
+      rating: ratingsMap[book.work_key] ?? null,
+    }));
+
+    res.json(booksWithRatings);
   } catch (error) {
     console.error("SearchBooks error:", error.message);
     res.status(500).json({ message: "Error in fetching books" });
