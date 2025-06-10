@@ -38,15 +38,17 @@ Routes requiring authentication read the user's ID from req.user.id (JWT payload
 ---
 
 ## 🛠 Run Tests (if available)
--> Add your tests and run with:
+### Add your tests and run with:
 npm test
 
+---
 
 ## 📜 License
 MIT © Aryan Kumar Shrivastav
 
+---
 
 ## 🙋‍♂️ About
 Built by Aryan — feel free to open issues or contribute!
 
-
+---
