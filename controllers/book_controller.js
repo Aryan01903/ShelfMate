@@ -187,3 +187,40 @@ exports.rateBook = async (req, res) => {
     res.status(500).json({ message: "Error rating book." });
   }
 };
+exports.getRatingsForBooks = async (req, res) => {
+  try {
+    const { work_keys } = req.query;
+    if (!work_keys) {
+      return res.status(400).json({ message: "Work keys are required." });
+    }
+
+    const workKeysArray = work_keys
+      .split(",")
+      .map((key) => key.trim().toUpperCase())
+      .filter((key) => /^OL\d+W$/.test(key));
+
+    if (!workKeysArray.length) {
+      return res.status(400).json({ message: "Invalid work keys provided." });
+    }
+
+    const books = await Book.find({ work_key: { $in: workKeysArray } }).select(
+      "work_key averageRating ratings"
+    );
+
+    const ratingMap = {};
+    workKeysArray.forEach((key) => {
+      const book = books.find((b) => b.work_key === key);
+      ratingMap[key] = book
+        ? {
+            averageRating: book.averageRating || 0,
+            ratings: book.ratings || [],
+          }
+        : { averageRating: 0, ratings: [] };
+    });
+
+    res.status(200).json({ ratings: ratingMap });
+  } catch (err) {
+    console.error("GetRatingsForBooks error:", err.message);
+    res.status(500).json({ message: "Error fetching ratings." });
+  }
+};
