@@ -11,12 +11,12 @@ exports.searchBooks = async (req, res) => {
       return res.status(400).json({ message: "Search query is required." });
     }
 
-    // Fetch from Open Library
+    // Step 1: Fetch from Open Library
     const response = await axios.get(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`
     );
 
-    // Filter and normalize work keys
+    // Step 2: Filter and normalize
     const books = response.data.docs
       .filter(book => book.key && book.key.match(/^\/works\/OL[0-9]+W$/))
       .map(book => ({
@@ -26,19 +26,30 @@ exports.searchBooks = async (req, res) => {
 
     const workKeys = books.map(book => book.work_key);
 
-    // Fetch average ratings for those books from your DB
-    const dbBooks = await Book.find({ work_key: { $in: workKeys } }, 'work_key averageRating');
+    // Step 3: Fetch rating + reviews from DB
+    const dbBooks = await Book.find(
+      { work_key: { $in: workKeys } },
+      'work_key averageRating ratings'
+    ).populate('ratings.userId', 'name'); // Optional: include username if needed
 
-    // Create a map of work_key => averageRating
-    const ratingsMap = {};
+    // Step 4: Create map: work_key => DB data
+    const bookDataMap = {};
     dbBooks.forEach(dbBook => {
-      ratingsMap[dbBook.work_key] = dbBook.averageRating;
+      bookDataMap[dbBook.work_key] = {
+        averageRating: dbBook.averageRating,
+        reviews: dbBook.ratings.map(r => ({
+          user: r.userId?.name || r.userId?.toString(), // name if populated
+          rating: r.rating,
+          review: r.review,
+        })),
+      };
     });
 
-    // Attach rating to books
+    // Step 5: Attach data to each book
     const booksWithRatings = books.map(book => ({
       ...book,
-      rating: ratingsMap[book.work_key] ?? null,
+      averageRating: bookDataMap[book.work_key]?.averageRating ?? null,
+      reviews: bookDataMap[book.work_key]?.reviews ?? [],
     }));
 
     res.json(booksWithRatings);
